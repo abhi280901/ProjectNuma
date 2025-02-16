@@ -30,11 +30,14 @@ df = pd.concat([pd.read_parquet(file) for file in parquet_files], ignore_index=T
 # Display basic info
 print(df.info())
 
-# Step 1: Drop unnecessary columns
+# Step 1: Drop unnecessary columns (but keep target attributes)
 df = df.drop(columns=[
     'transaction_id', 'account_id', 'counterpart_id', 'assigned_bank', 
-    'min', 'sec', 'laundering_schema_type', 'laundering_schema_id'
+    'min', 'sec'  # Drop granular time features but keep targets
 ])
+targets = df[['laundering_schema_type', 'laundering_schema_id']]
+df = df.drop(columns=['laundering_schema_type', 'laundering_schema_id'])
+
 
 # Step 2: Convert age to numerical (midpoint of the range)
 df['age'] = df['age'].apply(lambda x: int(float(x)))
@@ -79,11 +82,11 @@ preprocessor = ColumnTransformer([
 X_preprocessed = preprocessor.fit_transform(df)
 
 # Step 8: Perform PCA
-#pca = PCA(n_components=10)  # Force 10 PCs for simulation
-#X_pca = pca.fit_transform(X_preprocessed)
-
 svd = TruncatedSVD(n_components=10)  # Force 10 components
 X_pca = svd.fit_transform(X_preprocessed)  # Works directly with sparse matrix
+
+# Rejoin target attributes with PCA-transformed data
+X_pca_with_targets = np.hstack((X_pca, targets))
 
 # Step 9: Define regions and their associated lower PCs
 regions = ["Asia", "Europe", "North America", "Africa", "South America"]
@@ -116,16 +119,18 @@ def add_noise(data, noise_scale=0.1):
 # Step 12: Assign subsets of PCs to each client and add noise
 client_data = []
 for indices in client_pc_indices:
-    client_pcs = X_pca[:, indices]
-    client_data.append(add_noise(client_pcs))
+    # Separate PCA features and targets
+    client_pcs = X_pca_with_targets[:, indices] # PCA features
+    client_targets = X_pca_with_targets[:, [10, 11]]  # Target columns
+    # Add noise only to PCA features
+    client_pcs_noisy = add_noise(client_pcs)
+    client_data.append(np.hstack((client_pcs_noisy, client_targets)))
 
 # Step 13: Simulate federated training
 for client_id, (region, data) in enumerate(zip(client_regions, client_data)):
     print(f"Client {client_id + 1} (Region: {region}) PCs: {client_pc_indices[client_id]}")
     print(f"Client {client_id + 1} data shape: {data.shape}")
-
-
-# Step 14: Train local model on data (simulated)
+    # Code to train local model on data (simulated)
 
 '''
 # Step 14: Vary PCA variance thresholds (optional)
