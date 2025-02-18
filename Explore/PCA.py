@@ -33,7 +33,7 @@ print(df.info())
 # Step 1: Drop unnecessary columns (but keep target attributes)
 df = df.drop(columns=[
     'transaction_id', 'account_id', 'counterpart_id', 'assigned_bank', 
-    'min', 'sec'  # Drop granular time features but keep targets
+    'min', 'sec','category_1', 'category_2','weekday'  # Drop granular time features but keep targets
 ])
 targets = df[['laundering_schema_type', 'laundering_schema_id']]
 df = df.drop(columns=['laundering_schema_type', 'laundering_schema_id'])
@@ -56,8 +56,8 @@ df = cyclical_encode(df, 'hour', 24)
 numerical_features = ['amount', 'initial_balance', 'age']
 cyclical_features = ['month_sin', 'month_cos', 'day_sin', 'day_cos', 'hour_sin', 'hour_cos']
 categorical_features = [
-    'weekday', 'transaction_direction', 'channel', 'payment_system', 
-    'category_0', 'category_1', 'category_2', 'assigned_bank_type'
+    'transaction_direction', 'channel', 'payment_system', 
+    'category_0', 'assigned_bank_type'
 ]
 
 # Step 5: Create preprocessing pipelines
@@ -84,11 +84,12 @@ X_preprocessed = preprocessor.fit_transform(df)
 # Step 8: Perform PCA
 svd = TruncatedSVD(n_components=10)  # Force 10 components
 X_pca = svd.fit_transform(X_preprocessed)  # Works directly with sparse matrix
+explained_variance_ratio = svd.explained_variance_ratio_
 
 # Rejoin target attributes with PCA-transformed data
 X_pca_with_targets = np.hstack((X_pca, targets))
 
-# Step 9: Define regions and their associated lower PCs
+# Step 9a: Define regions and their associated lower PCs
 regions = ["Asia", "Europe", "North America", "Africa", "South America"]
 region_pc_mappings = {
     "Asia": [4, 5],      # PCs correlated with regional payment systems
@@ -112,12 +113,13 @@ client_regions = np.random.choice(list(region_pc_mappings.keys()), size=5)
 client_pc_indices = assign_pcs_with_regions(client_regions)
 
 # Step 11: Add noise to simulate local variations
-def add_noise(data, noise_scale=0.1):
-    noise = np.random.randn(*data.shape) * noise_scale
+def add_noise(data, mean=0.0, std_dev=0.1):
+    noise = np.random.normal(loc=mean, scale=std_dev, size = data.shape)
     return data + noise
 
 # Step 12: Assign subsets of PCs to each client and add noise
 client_data = []
+client_variance = []
 for indices in client_pc_indices:
     # Separate PCA features and targets
     client_pcs = X_pca_with_targets[:, indices] # PCA features
@@ -125,11 +127,15 @@ for indices in client_pc_indices:
     # Add noise only to PCA features
     client_pcs_noisy = add_noise(client_pcs)
     client_data.append(np.hstack((client_pcs_noisy, client_targets)))
+    # Sum the variance of the assigned components
+    variance_captured = np.sum(explained_variance_ratio[indices])
+    client_variance.append(variance_captured)
 
 # Step 13: Simulate federated training
-for client_id, (region, data) in enumerate(zip(client_regions, client_data)):
+for client_id, (region, data, variance) in enumerate(zip(client_regions, client_data, client_variance)):
     print(f"Client {client_id + 1} (Region: {region}) PCs: {client_pc_indices[client_id]}")
     print(f"Client {client_id + 1} data shape: {data.shape}")
+    print(f"Client {client_id + 1} : {variance * 100:.2f}% variance captured")
     # Code to train local model on data (simulated)
 
 '''
