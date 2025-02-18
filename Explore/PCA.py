@@ -9,16 +9,16 @@ from sklearn.impute import SimpleImputer
 
 
 # Path to your Parquet files (update this as needed)
-#parquet_file_1 = "JoinedData/part.2.parquet"
-parquet_file_2 = "JoinedData/part.3.parquet"
+parquet_file_1 = "JoinedData/part.2.parquet"
+#parquet_file_2 = "JoinedData/part.3.parquet"
 #parquet_file_3 = "JoinedData/part.4.parquet"
 #parquet_file_4 = "JoinedData/part.5.parquet"
 #parquet_file_5 = "JoinedData/part.6.parquet"
 #parquet_file_6 = "JoinedData/part.7.parquet"
 
 # Get a list of all Parquet files
-#parquet_files = glob.glob(parquet_file_1)
-parquet_files = glob.glob(parquet_file_2)
+parquet_files = glob.glob(parquet_file_1)
+#parquet_files += glob.glob(parquet_file_2)
 #parquet_files += glob.glob(parquet_file_3)
 #parquet_files += glob.glob(parquet_file_4)
 #parquet_files += glob.glob(parquet_file_5)
@@ -82,7 +82,7 @@ preprocessor = ColumnTransformer([
 X_preprocessed = preprocessor.fit_transform(df)
 
 # Step 8: Perform PCA
-svd = TruncatedSVD(n_components=20)  # Force 10 components
+svd = TruncatedSVD(n_components=10)  # Force 10 components
 X_pca = svd.fit_transform(X_preprocessed)  # Works directly with sparse matrix
 explained_variance_ratio = svd.explained_variance_ratio_
 
@@ -92,24 +92,15 @@ X_pca_with_targets = np.hstack((X_pca, targets))
 # Step 9a: Define regions and their associated lower PCs
 regions = ["Asia", "Europe", "North America", "Africa", "South America"]
 region_pc_mappings = {
-    "Asia": [5, 6, 7, 8, 9],      # PCs correlated with regional payment systems
-    "Europe": [6, 8, 11, 15, 18],    # PCs for timezone-adjusted hour patterns
-    "North America": [8, 9, 13, 14, 18],  # PCs for local spending habits
-    "Africa": [4, 6, 9, 10, 19],    # PCs for regional transaction patterns
-    "South America": [5, 7, 9, 13, 17]  # PCs for local currency effects
-}
-'''
-# Step 9b: Define regions and their associated lower PCs with varying numbers across clients
-region_pc_mappings = {
     "Asia": [4, 5],      # PCs correlated with regional payment systems
-    "Europe": [6, 8, 9],    # PCs for timezone-adjusted hour patterns
-    "North America": [6, 7, 8, 9],  # PCs for local spending habits
-    "Africa": [4],    # PCs for regional transaction patterns
+    "Europe": [6, 7],    # PCs for timezone-adjusted hour patterns
+    "North America": [8, 9],  # PCs for local spending habits
+    "Africa": [4, 6],    # PCs for regional transaction patterns
     "South America": [5, 7]  # PCs for local currency effects
 }
-'''
+
 # Step 10: Assign PCs to clients with regional stratification
-def assign_pcs_with_regions(client_regions, total_pcs=20, fixed_pcs=5):
+def assign_pcs_with_regions(client_regions, total_pcs=10, fixed_pcs=3):
     client_indices = []
     for region in client_regions:
         fixed = list(range(fixed_pcs))  # Top PCs (global)
@@ -122,8 +113,8 @@ client_regions = np.random.choice(list(region_pc_mappings.keys()), size=5)
 client_pc_indices = assign_pcs_with_regions(client_regions)
 
 # Step 11: Add noise to simulate local variations
-def add_noise(data, noise_scale=0.1):
-    noise = np.random.randn(*data.shape) * noise_scale
+def add_noise(data, mean=0.0, std_dev=0.1):
+    noise = np.random.normal(loc=mean, scale=std_dev, size = data.shape)
     return data + noise
 
 # Step 12: Assign subsets of PCs to each client and add noise
