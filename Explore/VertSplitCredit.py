@@ -32,4 +32,4 @@ for i in range(1, 6):
     # Print the shape and selected PCs
     print(f"Client_{i}: Shape = {client_df.shape}")
     print(f"Columns: {selected_columns[:-1]} + ['Class']")
-    print(f"Total Variance Captured:{variance_percentage:.2f}%\n")
+    print(f"Total Variance Captured: {variance_captured:.4f} ({variance_percentage:.2f}%)\n")
