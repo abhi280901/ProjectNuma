@@ -95,7 +95,7 @@ class NewDataDataset(Dataset):
         return torch.tensor(self.X[idx], dtype=torch.float32), torch.tensor(self.y[idx], dtype=torch.long)
 
 # Load your new data (ensure that the data has the same number of features as the training data)
-new_data_df = pd.read_csv("demo_data.csv")
+new_data_df = pd.read_csv("FinalImplementation/noisy_data_with_targets.csv")
 # Assuming new_data_df includes both features and label column
 # For example, if 'label' is the column name for the ground truth:
 X_new = new_data_df.drop('laundering_schema_type', axis=1).values  

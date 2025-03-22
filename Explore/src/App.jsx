@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
     const [file, setFile] = useState(null);
@@ -54,7 +55,7 @@ function App() {
             const response = await axios.post("http://localhost:8000/run_pca", formData);
             console.log("PCA response data:", response.data);
             setPcaData(response.data);
-            alert("PCA processing complete!");
+            await handleUpload(); 
         } catch (error) {
             console.error("Error running PCA:", error);
             alert("Failed to run PCA.");
@@ -67,92 +68,69 @@ function App() {
     const report = prediction?.report || [];
 
     return (
-        <div className="min-h-screen bg-gradient-to-r from-blue-500 to-purple-600 flex flex-col items-center justify-center p-4">
-            <motion.h1
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl font-extrabold mb-6 text-white drop-shadow-lg"
-            >
-                🌟 FedShield 🌟
-            </motion.h1>
-
-            <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white p-6 rounded-2xl shadow-lg w-80"
-            >
-                <input
-                    type="file"
-                    onChange={handleFileChange}
-                    className="w-full mb-4 p-2 border rounded"
-                />
-                <button
-                    onClick={handleUpload}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 text-white font-semibold py-2 rounded-2xl transition"
-                >
-                    🚀 Upload & Predict
-                </button>
-                <button
-                    onClick={handleRunPCA}
-                    className="w-full mt-2 bg-gradient-to-r from-green-500 to-teal-600 hover:opacity-90 text-white font-semibold py-2 rounded-2xl transition"
-                >
-                    🔍 Run PCA
-                </button>
-
-                {loading && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-blue-500 font-semibold mt-4 text-center"
-                    >
-                        🔄 Processing...
-                    </motion.div>
-                )}
-
-                {pcaData.ori_data.length > 0 && (
-                    <div className="mt-4">
-                        <h3 className="text-lg font-semibold mb-2">📌 Original Data</h3>
-                        <pre>{pcaData.ori_data.join('\n')}</pre>
-                        <h3 className="text-lg font-semibold mt-4 mb-2">📌 PCA Data</h3>
-                        <pre>{pcaData.svd_noisy.join('\n')}</pre>
-                    </div>
-                )}
-
-                {predictions.length > 0 && (
-                    <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
+        <div className="container-fluid bg-light vh-100 d-flex align-items-center justify-content-center">
+            <div className="row w-75 shadow-lg rounded-3 bg-white p-4">
+                
+                {/* Left Side: Inputs and Buttons */}
+                <div className="col-md-4 border-end">
+                    <motion.h1
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.5 }}
-                        className="mt-4 p-4 bg-gray-100 text-gray-800 rounded-xl shadow-lg text-center"
+                        className="text-center mb-4 text-black"
                     >
-                        <h2 className="text-2xl font-bold mb-4 text-green-700">✅ Prediction Results</h2>
-                        <table className="table-auto border-collapse border border-gray-400 w-full">
-                            <thead>
-                                <tr className="bg-gray-200">
-                                    <th className="border border-gray-400 px-4 py-2">Transaction</th>
-                                    <th className="border border-gray-400 px-4 py-2">Prediction</th>
-                                    <th className="border border-gray-400 px-4 py-2">Labels</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {predictions.map((res, index) => {
-                                    const [_, status, target] = res.split(":").map(item => item.trim());
-                                    return (
-                                        <tr key={index} className={status === "Fraud" ? "bg-red-100" : "bg-green-100"}>
-                                            <td className="border border-gray-400 px-4 py-2">{`${index}`}</td>
-                                            <td className="border border-gray-400 px-4 py-2 font-bold">{status}</td>
-                                            <td className="border border-gray-400 px-4 py-2 font-bold">{target}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </motion.div>
-                )}
-            </motion.div>
+                        FedShield
+                    </motion.h1>
+                    <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="form-control mb-3"
+                    />
+                    <button onClick={handleUpload} className="btn btn-success w-100 mb-2">Upload & Predict</button>
+                    <button onClick={handleRunPCA} className="btn btn-info w-100 mb-2">Run PCA</button>
+                </div>
+
+                {/* Right Side: Output */}
+                <div className="col-md-8">
+                    {loading && <div className="text-center text-warning">🔄 Processing...</div>}
+
+                    {pcaData.ori_data.length > 0 && (
+                        <div>
+                            <h3 className="text-secondary">Original Data</h3>
+                            <pre className="bg-light p-2 rounded border border-dark">{pcaData.ori_data.join('\n')}</pre>
+                            <h3 className="text-secondary mt-3">PCA Data</h3>
+                            <pre className="bg-light p-2 rounded border border-dark">{pcaData.svd_noisy.join('\n')}</pre>
+                        </div>
+                    )}
+
+                    {predictions.length > 0 && (
+                        <div className="mt-4">
+                            <h2 className="text-black">Prediction Results</h2>
+                            <table className="table table-striped table-bordered">
+                                <thead className="table-dark">
+                                    <tr>
+                                        <th>Transaction</th>
+                                        <th>Prediction</th>
+                                        <th>Labels</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {predictions.map((res, index) => {
+                                        const [_, status, target] = res.split(":").map(item => item.trim());
+                                        return (
+                                            <tr key={index} className={status === "Fraud" ? "table-danger" : "table-success"}>
+                                                <td>{index}</td>
+                                                <td className="fw-bold">{status}</td>
+                                                <td className="fw-bold">{target}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
