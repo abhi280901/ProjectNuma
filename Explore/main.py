@@ -15,6 +15,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/run_pca")
+async def run_pca(file: UploadFile = File(...)):
+    try:
+        # Define paths
+        base_dir = os.path.dirname(__file__)
+        pca_script_path = os.path.join(base_dir, "FinalImplementation", "PCA_demo.py")
+        data_path = os.path.join(base_dir, "FinalImplementation", "first_five_rows.parquet")
+        output_path = os.path.join(base_dir, "FinalImplementation", "noisy_data_with_targets.csv")
+
+        # Run PCA script
+        result = subprocess.run(["python3", pca_script_path], capture_output=True, text=True)
+
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
+
+        # Check if the script ran successfully
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"PCA script failed: {result.stderr}")
+
+        # Extract prediction from output
+        output_lines = result.stdout.splitlines()
+
+        ori_data = []
+        svd_noisy = []
+
+        for line in output_lines:
+            if "Original Data" in line:
+                ori_data = output_lines[output_lines.index(line) + 1 : output_lines.index(line) + 7]
+            elif "Noisy Data with Targets" in line:
+                svd_noisy = output_lines[output_lines.index(line) + 1 : output_lines.index(line) + 7]
+
+        # Return structured output
+        return JSONResponse(content={
+            "ori_data": ori_data,
+            "svd_noisy": svd_noisy,
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing file for PCA: {e}")
+
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:

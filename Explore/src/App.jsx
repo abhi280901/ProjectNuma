@@ -6,6 +6,7 @@ function App() {
     const [file, setFile] = useState(null);
     const [prediction, setPrediction] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [pcaData, setPcaData] = useState({ ori_data: [], svd_noisy: [] });
 
     const handleFileChange = (e) => setFile(e.target.files[0]);
 
@@ -42,6 +43,26 @@ function App() {
         }
     };
 
+    const handleRunPCA = async () => {
+        if (!file) return alert("Please select a file first!");
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            setLoading(true);
+            const response = await axios.post("http://localhost:8000/run_pca", formData);
+            console.log("PCA response data:", response.data);
+            setPcaData(response.data);
+            alert("PCA processing complete!");
+        } catch (error) {
+            console.error("Error running PCA:", error);
+            alert("Failed to run PCA.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const predictions = prediction?.results || [];
     const report = prediction?.report || [];
 
@@ -73,6 +94,12 @@ function App() {
                 >
                     🚀 Upload & Predict
                 </button>
+                <button
+                    onClick={handleRunPCA}
+                    className="w-full mt-2 bg-gradient-to-r from-green-500 to-teal-600 hover:opacity-90 text-white font-semibold py-2 rounded-2xl transition"
+                >
+                    🔍 Run PCA
+                </button>
 
                 {loading && (
                     <motion.div
@@ -83,6 +110,15 @@ function App() {
                     >
                         🔄 Processing...
                     </motion.div>
+                )}
+
+                {pcaData.ori_data.length > 0 && (
+                    <div className="mt-4">
+                        <h3 className="text-lg font-semibold mb-2">📌 Original Data</h3>
+                        <pre>{pcaData.ori_data.join('\n')}</pre>
+                        <h3 className="text-lg font-semibold mt-4 mb-2">📌 PCA Data</h3>
+                        <pre>{pcaData.svd_noisy.join('\n')}</pre>
+                    </div>
                 )}
 
                 {predictions.length > 0 && (
@@ -98,30 +134,23 @@ function App() {
                                 <tr className="bg-gray-200">
                                     <th className="border border-gray-400 px-4 py-2">Transaction</th>
                                     <th className="border border-gray-400 px-4 py-2">Prediction</th>
+                                    <th className="border border-gray-400 px-4 py-2">Labels</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {predictions.map((res, index) => {
-                                    const [_, status] = res.split(": ");
+                                    const [_, status, target] = res.split(":").map(item => item.trim());
                                     return (
                                         <tr key={index} className={status === "Fraud" ? "bg-red-100" : "bg-green-100"}>
-                                            <td className="border border-gray-400 px-4 py-2">{`Transaction ${index + 1}`}</td>
+                                            <td className="border border-gray-400 px-4 py-2">{`${index}`}</td>
                                             <td className="border border-gray-400 px-4 py-2 font-bold">{status}</td>
+                                            <td className="border border-gray-400 px-4 py-2 font-bold">{target}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
                     </motion.div>
-                )}
-
-                {report.length > 0 && (
-                    <div className="mt-4 p-4 bg-gray-100 border border-gray-400 rounded">
-                        <h3 className="text-lg font-semibold mb-2">📊 Classification Report</h3>
-                        {report.map((line, index) => (
-                            <pre key={index} className="text-sm">{line}</pre>
-                        ))}
-                    </div>
                 )}
             </motion.div>
         </div>

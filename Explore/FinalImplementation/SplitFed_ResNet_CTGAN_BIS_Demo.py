@@ -151,4 +151,5 @@ print("\nPredictions:")
 random_indices = random.sample(range(len(all_preds)), min(5, len(all_preds)))
 for i, idx in enumerate(random_indices):
     label = "Fraud" if all_preds[idx] == 1 else "Legit"
-    print(f"Transaction {idx+1}: {label}")
+    target = "Fraud" if all_labels[idx] == 1 else "Legit"
+    print(f"Transaction {idx+1}: {label}: {target}")
