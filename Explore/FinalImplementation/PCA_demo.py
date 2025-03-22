@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 
 # Path to your Parquet files (update this as needed)
-parquet_file_1 = "FinalImplementation/first_five_rows.parquet"
+parquet_file_1 = "FinalImplementation/BIS_Raw_sample_5.parquet"
 
 # Get a list of all Parquet files
 parquet_files = glob.glob(parquet_file_1)
@@ -85,12 +85,16 @@ X_svd_noisy = add_noise(X_svd)
 # Step 11: Rejoin target attributes with noisy SVD-transformed data
 X_svd_noisy_with_targets = np.hstack((X_svd_noisy, targets.values))
 
-X_svd_noisy_with_targets[:5, -1] = 1.0
 
 # Save the noisy data with targets to a CSV file
 noisy_data_with_targets_df = pd.DataFrame(
     X_svd_noisy_with_targets, 
     columns=[f"pca_{i}" for i in range(5)] + ['laundering_schema_type']
+)
+
+# Assuming this is a pandas DataFrame
+noisy_data_with_targets_df["laundering_schema_type"] = noisy_data_with_targets_df["laundering_schema_type"].apply(
+    lambda x: 0.0 if pd.isna(x) else 1.0
 )
 
 noisy_data_with_targets_df.to_csv("FinalImplementation/noisy_data_with_targets.csv", index=False)
