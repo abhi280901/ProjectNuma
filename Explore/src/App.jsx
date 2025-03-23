@@ -100,6 +100,9 @@ function App() {
                             <pre className="bg-light p-2 rounded border border-dark">{pcaData.ori_data.join('\n')}</pre>
                             <h3 className="text-secondary mt-3">PCA Data</h3>
                             <pre className="bg-light p-2 rounded border border-dark">{pcaData.svd_noisy.join('\n')}</pre>
+                            <p className="text-muted fst-italic small mt-1">
+                                Note: The PCA-ed table above has included Gaussian noise.
+                            </p>
                         </div>
                     )}
 
@@ -127,6 +130,9 @@ function App() {
                                     })}
                                 </tbody>
                             </table>
+                            <p className="text-muted fst-italic small mt-1">
+                                Model: Using Split Federated Learning framework on CTGAN (to handle imbalanced labels) and ResNet (for prediction).
+                            </p>
                         </div>
                     )}
                 </div>
