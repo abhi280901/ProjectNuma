@@ -91,6 +91,10 @@ noisy_data_with_targets_df = pd.DataFrame(
     X_svd_noisy_with_targets, 
     columns=[f"pca_{i}" for i in range(5)] + ['laundering_schema_type']
 )
+noisy_data_df = pd.DataFrame(
+    X_svd_noisy, 
+    columns=[f"PC{i+1}" for i in range(5)]
+)
 
 # Assuming this is a pandas DataFrame
 noisy_data_with_targets_df["laundering_schema_type"] = noisy_data_with_targets_df["laundering_schema_type"].apply(
@@ -100,4 +104,4 @@ noisy_data_with_targets_df["laundering_schema_type"] = noisy_data_with_targets_d
 noisy_data_with_targets_df.to_csv("FinalImplementation/noisy_data_with_targets.csv", index=False)
 
 print("\nNoisy Data with Targets:")
-print(noisy_data_with_targets_df)
+print(noisy_data_df)
